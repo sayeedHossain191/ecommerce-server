@@ -32,10 +32,57 @@ async function run() {
 
 
         app.get('/products', async (req, res) => {
+            // const cursor = productCollection.find();
+            // const result = await cursor.toArray();
+
+            try {
+                const { search, sort, email } = req.query;
+                let pipeline = [];
+
+                // Match stage for search
+                if (search) {
+                    pipeline.push({
+                        $match: {
+                            name: { $regex: search, $options: 'i' }
+                        }
+                    });
+                }
+
+                // // Match stage for email
+                // if (email) {
+                //     pipeline.push({
+                //         $match: {
+                //             "postMaker.postMaker_email": email
+                //         }
+                //     });
+                // }
+
+                const result = await productCollection.aggregate(pipeline).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error in fetching products:", error);
+                res.status(500).send({ error });
+            }
+        })
+
+        //Pagination starts
+        app.get('/all-products', async (req, res) => {
+            const page = parseInt(req.query.page) - 1
+            const size = parseInt(req.query.size)
+
             const cursor = productCollection.find();
-            const result = await cursor.toArray();
+            const result = await cursor
+                .skip(page * size)
+                .limit(size)
+                .toArray();
             res.send(result)
         })
+        //Product count
+        app.get('/product-count', async (req, res) => {
+            const count = await productCollection.estimatedDocumentCount();
+            res.send({ count })
+        })
+        //Pagination Ends
 
 
 
