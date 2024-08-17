@@ -36,7 +36,7 @@ async function run() {
             // const result = await cursor.toArray();
 
             try {
-                const { search, sort, email } = req.query;
+                const { search, sort } = req.query;
                 let pipeline = [];
 
                 // Match stage for search
@@ -48,14 +48,24 @@ async function run() {
                     });
                 }
 
-                // // Match stage for email
-                // if (email) {
-                //     pipeline.push({
-                //         $match: {
-                //             "postMaker.postMaker_email": email
-                //         }
-                //     });
-                // }
+                // Sort stage
+                if (sort) {
+                    const sortOrder = sort === 'asc' ? 1 : -1; // Default to descending if sort is not 'asc'
+                    pipeline.push({
+                        $sort: { price: sortOrder }
+                    });
+                } else {
+                    // If no sort option is provided, you may want to provide a default sort order.
+                    // For example, sort by price in ascending order by default
+                    pipeline.push({
+                        $sort: { price: 1 }
+                    });
+                }
+                // pipeline.push(
+                //     {
+                //         $sort: { price: sort === 'asc' ? 1 : -1 }
+                //     }
+                // );
 
                 const result = await productCollection.aggregate(pipeline).toArray();
                 res.send(result);
@@ -64,6 +74,8 @@ async function run() {
                 res.status(500).send({ error });
             }
         })
+
+
 
         //Pagination starts
         app.get('/all-products', async (req, res) => {
